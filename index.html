@@ -75,12 +75,17 @@ div.tooltip {
   <p>Responsive D3 World Map with zoom and pan limits, graticule and equator lines, optimized TopoJSON with country names and colors, geo translation functions, geo coordinate plotting functions for points and text, and much more.  For a full list of features, please go <a href="http://techslides.com/d3-map-starter-kit/">back to article</a>.</p> -->
 
   <div id="container">
-    <div style="position:fixed;float:left;top:540px;left:420px;opacity:0.8;font-size:24px;"><a target="_blank" style="color:#99d8c9;background:#f0f;"> The global terrorism attacks from 1997-2016</a></div>
+    <form style="position:fixed;float:left;top:560px;left:420px;">
+      <a id="result">2001</a> 
+      <input id="bar" type="range" name="points" min="1997" max="2016" onmouseup="update()"/>
+    </form>
+    <div style="position:fixed;float:left;top:520px;left:420px;opacity:0.8;font-size:24px;"><a target="_blank" style="color:#99d8c9;background:#f0f;"> The global terrorism attacks from 1997-2016</a></div>
   </div>
 
 <script src="js/d3.min.js"></script>
 <script src="js/topojson.v1.min.js"></script>
 <script>
+
 d3.select(window).on("resize", throttle);
 
 var zoom = d3.behavior.zoom()
@@ -91,15 +96,25 @@ var zoom = d3.behavior.zoom()
 var width = document.getElementById('container').offsetWidth;
 var height = width / 2;
 
-var topo,projection,path,svg,g,year,count;
-year = 2011;
+var topo,projection,path,svg,g,year;
+var attacks, count; // data about terrorism attacks 
+year = 2001;
+
+function update() { // change years and redraw
+  var wrapper=document.getElementById('result');
+  var slider=document.getElementById('bar');
+  wrapper.innerHTML = slider.value;
+  year = slider.value;
+  redraw();
+}
 
 var graticule = d3.geo.graticule();
 
-var tooltip = d3.select("#container").append("div").attr("class", "tooltip hidden");
+//show messages when mouse move over country and attacks 
+var tooltip = d3.select("#container").append("div").attr("class", "tooltip hidden"); 
 
 setup(width,height);
-
+// set up the container width and height
 function setup(width,height){
   projection = d3.geo.mercator()
     .translate([(width/2), (height/2)])
@@ -117,26 +132,29 @@ function setup(width,height){
   g = svg.append("g");
 
 }
-
-d3.json("data/attack_count.json", function(error, attacks) {
+// read data about every year each country's amount of attacks
+d3.json("data/attack_count.json", function(error, attacks_count) {
   if (error) {
     console.log(error);
   }
-  count = attacks;
+  count = attacks_count;
 });
-
+// read data about all attacks from 1997 - 2016
+d3.json("data/attack_data.json", function(error, all_attacks) {
+  attacks = all_attacks;
+});
+// data about map
 d3.json("data/world-topo-min.json", function(error, world) {
   var countries = topojson.feature(world, world.objects.countries).features;
   topo = countries;
-  draw(topo,year,count);
-
+  draw(topo,year,count,attacks);
 });
+//draw each country with different colors according to attack_count.json, each attack with point according to attack_data.json
+function draw(topo,year,count,attacks) {
+  var palegreen = d3.rgb(229,187,129);    //pale
+  var darkgreen = d3.rgb(161,23,21);        //dark
 
-function draw(topo,year,count) {
-  var palegreen = d3.rgb(229,187,129);    //浅绿
-  var darkgreen = d3.rgb(161,23,21);        //深绿
-
-  var color = d3.interpolate(palegreen,darkgreen);        //颜色插值函数
+  var color = d3.interpolate(palegreen,darkgreen);  // the scale to change integer into different colors
   var linear = d3.scale.linear()
           .domain([0, 50])
           .range([0, 1]);
@@ -146,15 +164,15 @@ function draw(topo,year,count) {
      .attr("class", "graticule")
      .attr("d", path);
 
-
-  g.append("path")
+// add equator
+  g.append("path") 
    .datum({type: "LineString", coordinates: [[-180, 0], [-90, 0], [0, 0], [90, 0], [180, 0]]})
    .attr("class", "equator")
    .attr("d", path);
 
 
   var country = g.selectAll(".country").data(topo);
-
+//draw countries in the map, fill colors with count(the data from attack_count.json)
   country.enter().insert("path")
       .attr("class", "country")
       .attr("d", path)
@@ -178,32 +196,23 @@ function draw(topo,year,count) {
   var offsetL = document.getElementById('container').offsetLeft+20;
   var offsetT = document.getElementById('container').offsetTop+10;
 
-  //tooltips
+  //tooltips show country name
   country
     .on("mousemove", function(d,i) {
 
       var mouse = d3.mouse(svg.node()).map( function(d) { return parseInt(d); } );
-
       tooltip.classed("hidden", false)
              .attr("style", "left:"+(mouse[0]+offsetL)+"px;top:"+(mouse[1]+offsetT)+"px")
              .html(d.properties.name);
-
-      })
-      .on("mouseout",  function(d,i) {
-        tooltip.classed("hidden", true);
-      }); 
-
-
-  //EXAMPLE: adding some capitals from external CSV file
-  d3.json("data/attack_data.json", function(err, attacks) {
-
+    })
+    .on("mouseout",  function(d,i) {
+      tooltip.classed("hidden", true);
+    }); 
+ // draw points about attacks in this year
     attacks.forEach(function(i){
       if (i.year == year)
           addpoint(i);
     });
-
-  });
-
 }
 
 
@@ -212,10 +221,10 @@ function redraw() {
   height = width / 2;
   d3.select('svg').remove();
   setup(width,height);
-  draw(topo,year,count);
+  draw(topo,year,count,attacks);
 }
 
-
+// about the move of map, not very familiar
 function move() {
 
   var t = d3.event.translate;
@@ -243,7 +252,7 @@ function move() {
 }
 
 
-
+// zoom? not familiar too
 var throttleTimer;
 function throttle() {
   window.clearTimeout(throttleTimer);
@@ -253,14 +262,14 @@ function throttle() {
 }
 
 
-//geo translation on mouse click in map
+//the click functions when clicking each country, more to do
 function click() {
   var latlon = projection.invert(d3.mouse(this));
   console.log(latlon);
 }
 
 
-//function to add points and text to the map (used in plotting capitals)
+//function to add points about each attack, different radius for different amount of people killed. data from data_attack.json
 function addpoint(attack) {
   var lon = attack.longitude;
   var lat = attack.latitude;
