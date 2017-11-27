@@ -41,32 +41,27 @@ div.tooltip {
   stroke: #ccc;
   stroke-width: 1px;
 }
-.dragdealer {
-    height: 18px;
-    background: #555;
-    z-index: 50;
-}
-.dragdealer .handle {
-    top: 0;
-    left: 0;
-    cursor: pointer;
-    z-index: 52;
-}
-.dragdealer .orange-bar {
-    width: 80px;
-    height: 18px;
-    background: #99d8c9;
-    color: #444;
-    font-size: 14px;
-    line-height: 19px;
-    text-align: center;
-    font-weight: bold;
-    z-index: 52;
-}
-.dragdealer .orange-bar:hover {
-    background: #777;
-}
 
+  .axis path,
+  .axis line{
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+  }
+
+  .axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+  }
+
+  .MyRect {
+    fill: steelblue;
+  }
+
+  .MyText {
+    fill: white;
+    text-anchor: middle;
+  }
 </style>
 </head>
 <body>
@@ -75,6 +70,7 @@ div.tooltip {
   <p>Responsive D3 World Map with zoom and pan limits, graticule and equator lines, optimized TopoJSON with country names and colors, geo translation functions, geo coordinate plotting functions for points and text, and much more.  For a full list of features, please go <a href="http://techslides.com/d3-map-starter-kit/">back to article</a>.</p> -->
 
   <div id="container">
+    <div id="charts" style="position:fixed;float:left;top:100px;left:220px;"></div>
     <form style="position:fixed;float:left;top:560px;left:420px;">
       <a id="result">2001</a> 
       <input id="bar" type="range" name="points" min="1997" max="2016" onmouseup="update()"/>
@@ -82,7 +78,9 @@ div.tooltip {
     <div style="position:fixed;float:left;top:520px;left:420px;opacity:0.8;font-size:24px;"><a target="_blank" style="color:#99d8c9;background:#f0f;"> The global terrorism attacks from 1997-2016</a></div>
   </div>
 
+
 <script src="js/d3.min.js"></script>
+<script src="js/chart.js"></script>
 <script src="js/topojson.v1.min.js"></script>
 <script>
 
@@ -97,12 +95,15 @@ var width = document.getElementById('container').offsetWidth;
 var height = width / 2;
 
 var topo,projection,path,svg,g,year;
-var attacks, count; // data about terrorism attacks 
+var attacks, count; // data about terrorism attacks
+var chart; 
 year = 2001;
 
+var wrapper=document.getElementById('result');
+var slider=document.getElementById('bar');
+slider.value = year;
+
 function update() { // change years and redraw
-  var wrapper=document.getElementById('result');
-  var slider=document.getElementById('bar');
   wrapper.innerHTML = slider.value;
   year = slider.value;
   redraw();
@@ -141,13 +142,15 @@ d3.json("data/attack_count.json", function(error, attacks_count) {
 });
 // read data about all attacks from 1997 - 2016
 d3.json("data/attack_data.json", function(error, all_attacks) {
-  attacks = all_attacks;
+  attacks = all_attacks.filter(function(item) {
+     return item.nkill > 0;
+  });
+  draw(topo,year,count,attacks);
 });
 // data about map
 d3.json("data/world-topo-min.json", function(error, world) {
   var countries = topojson.feature(world, world.objects.countries).features;
   topo = countries;
-  draw(topo,year,count,attacks);
 });
 //draw each country with different colors according to attack_count.json, each attack with point according to attack_data.json
 function draw(topo,year,count,attacks) {
@@ -207,10 +210,29 @@ function draw(topo,year,count,attacks) {
     })
     .on("mouseout",  function(d,i) {
       tooltip.classed("hidden", true);
-    }); 
+    })
+    .on("click", function(d,i) {
+        if (chart != null) {
+          d3.select('svg').remove();
+          chart = null;
+        }
+
+      //定义一个数组
+      var dataset = [10, 20, 30, 40, 33, 24, 12, 5, 38, 39, 29, 49,29, 53, 4, 2, 4 ,0,0, 0];
+      for (var i = 1997; i < 2017; i++)
+        dataset[i-1997] = count[i][d.properties.name];
+      chart = drawChart(dataset);
+      chart.classed("hidden", false);
+      event.stopPropagation();
+      console.log("clicked");
+    })
+
  // draw points about attacks in this year
-    attacks.forEach(function(i){
-      if (i.year == year)
+    curAttacks = attacks.filter(function(item) {
+       return item.year == year;
+    });
+    curAttacks.forEach(function(i){
+      if (i.nkill > 0)
           addpoint(i);
     });
 }
@@ -219,6 +241,10 @@ function draw(topo,year,count,attacks) {
 function redraw() {
   width = document.getElementById('container').offsetWidth;
   height = width / 2;
+  if (chart != null) {
+    d3.select('svg').remove();
+    chart = null;
+  }
   d3.select('svg').remove();
   setup(width,height);
   draw(topo,year,count,attacks);
@@ -261,11 +287,10 @@ function throttle() {
     }, 200);
 }
 
-
 //the click functions when clicking each country, more to do
 function click() {
-  var latlon = projection.invert(d3.mouse(this));
-  console.log(latlon);
+  if (chart != null)
+    chart.classed("hidden", true);
 }
 
 
