@@ -55,11 +55,11 @@ div.tooltip {
   }
 
   .MyRect {
-    fill: steelblue;
+    fill: #005CAF;
   }
 
   .MyText {
-    fill: white;
+    fill: black;
     text-anchor: middle;
   }
 </style>
@@ -70,12 +70,12 @@ div.tooltip {
   <p>Responsive D3 World Map with zoom and pan limits, graticule and equator lines, optimized TopoJSON with country names and colors, geo translation functions, geo coordinate plotting functions for points and text, and much more.  For a full list of features, please go <a href="http://techslides.com/d3-map-starter-kit/">back to article</a>.</p> -->
 
   <div id="container">
-    <div id="charts" style="position:fixed;float:left;top:100px;left:220px;"></div>
-    <form style="position:fixed;float:left;top:560px;left:420px;">
-      <a id="result">2001</a> 
+    <div id="charts" style="position:fixed;float:left;top:100px;left:200px;opacity: 0.75;background:#FCFAF2"></div>
+     <form id = "header" style="position:absolute;float:left;top:560px;left:400px;font-size: 22px">
+      <a style="opacity: 0.8;color:#b11715;" id="result">Year: 2001</a> 
       <input id="bar" type="range" name="points" min="1997" max="2016" onmouseup="update()"/>
-    </form>
-    <div style="position:fixed;float:left;top:520px;left:420px;opacity:0.8;font-size:24px;"><a target="_blank" style="color:#99d8c9;background:#f0f;"> The global terrorism attacks from 1997-2016</a></div>
+    </form> 
+    <div style="position:fixed;float:left;top:520px;left:300px;opacity:0.8;font-size:28px;opacity:0.8; font:Trebuchet MS;"><a target="_blank" style="color:#b11715;"> The global terrorism attacks from 1997-2016</a></div>
   </div>
 
 
@@ -87,7 +87,7 @@ div.tooltip {
 d3.select(window).on("resize", throttle);
 
 var zoom = d3.behavior.zoom()
-    .scaleExtent([1, 9])
+    .scaleExtent([0.5, 9])
     .on("zoom", move);
 
 
@@ -101,11 +101,16 @@ year = 2001;
 
 var wrapper=document.getElementById('result');
 var slider=document.getElementById('bar');
+var Head =document.getElementById('header');
+console.log(Head.style.width);
 slider.value = year;
 
 function update() { // change years and redraw
-  wrapper.innerHTML = slider.value;
+  wrapper.innerHTML = "Year: "+ slider.value;
   year = slider.value;
+  zoom = d3.behavior.zoom()
+    .scaleExtent([0.5, 9])
+    .on("zoom", move);
   redraw();
 }
 
@@ -117,6 +122,9 @@ var tooltip = d3.select("#container").append("div").attr("class", "tooltip hidde
 setup(width,height);
 // set up the container width and height
 function setup(width,height){
+  Head.style.left = width/3;
+  Head.style.top = height - 100;
+
   projection = d3.geo.mercator()
     .translate([(width/2), (height/2)])
     .scale( width / 2 / Math.PI);
@@ -145,13 +153,18 @@ d3.json("data/attack_data.json", function(error, all_attacks) {
   attacks = all_attacks.filter(function(item) {
      return item.nkill > 0;
   });
+  if (topo != null && count != null)
   draw(topo,year,count,attacks);
 });
 // data about map
 d3.json("data/world-topo-min.json", function(error, world) {
   var countries = topojson.feature(world, world.objects.countries).features;
   topo = countries;
+  if (attacks != null && count != null)
+    draw(topo,year,count,attacks);
 });
+
+
 //draw each country with different colors according to attack_count.json, each attack with point according to attack_data.json
 function draw(topo,year,count,attacks) {
   var palegreen = d3.rgb(229,187,129);    //pale
@@ -235,6 +248,52 @@ function draw(topo,year,count,attacks) {
       if (i.nkill > 0)
           addpoint(i);
     });
+
+    //draw color signs 
+      //定义一个线性渐变
+   var defs = svg.append("defs");
+
+   var linearGradient = defs.append("linearGradient")
+                           .attr("id","linearColor")
+                           .attr("x1","0%")
+                           .attr("y1","0%")
+                           .attr("x2","100%")
+                           .attr("y2","0%");
+
+   var stop1 = linearGradient.append("stop")
+                   .attr("offset","0%")
+                   .style("stop-color",palegreen.toString());
+
+   var stop2 = linearGradient.append("stop")
+                   .attr("offset","100%")
+                   .style("stop-color",darkgreen.toString());
+
+   //添加一个矩形，并应用线性渐变
+   var colorRect = svg.append("rect")
+               .attr("x", 20)
+               .attr("y", 490)
+               .attr("width", 140)
+               .attr("height", 30)
+               .style("fill","url(#" + linearGradient.attr("id") + ")");
+
+   //添加文字
+   var minValueText = svg.append("text")
+               .attr("class","valueText")
+               .attr("x", 20)
+               .attr("y", 490)
+               .attr("dy", "-0.3em")
+               .text(function(){
+                   return "0";
+               });
+
+   var maxValueText = svg.append("text")
+               .attr("class","valueText")
+               .attr("x", 160)
+               .attr("y", 490)
+               .attr("dy", "-0.3em")
+               .text(function(){
+                   return "50+";
+               });
 }
 
 
@@ -291,6 +350,7 @@ function throttle() {
 function click() {
   if (chart != null)
     chart.classed("hidden", true);
+  console.log("clicked");
 }
 
 

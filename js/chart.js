@@ -14,6 +14,9 @@ function drawChart(dataset) {
     var padding = {left:30, right:30, top:20, bottom:20};
         
     //x轴的比例尺
+    // var xScale = d3.scale.ordinal()
+    //     .domain(d3.range(1997, 2017))
+    //     .rangeRoundBands([0, width - padding.left - padding.right]);
     var xScale = d3.scale.ordinal()
         .domain(d3.range(1997, 2017))
         .rangeRoundBands([0, width - padding.left - padding.right]);
@@ -25,9 +28,7 @@ function drawChart(dataset) {
     //定义x轴
     var xAxis = d3.svg.axis()
         .scale(xScale)
-        .orient("bottom")
-        .ticks(20)
-        .tickValues(d3.range(1997,2017));
+        .orient("bottom");
         
     //定义y轴
     var yAxis = d3.svg.axis()
@@ -45,7 +46,7 @@ function drawChart(dataset) {
         .attr("class","MyRect")
         .attr("transform","translate(" + padding.left + "," + padding.top + ")")
         .attr("x", function(d,i){
-            return xScale(i) + rectPadding/2;
+            return xScale(i+1997) + rectPadding/2;
         } )
         .attr("y",function(d){
             return yScale(d);
@@ -66,7 +67,7 @@ function drawChart(dataset) {
             return xScale(i+1997) + rectPadding/2;
         } )
         .attr("y",function(d){
-            return yScale(d);
+            return yScale(d) - 20;
         })
         .attr("dx",function(){
             return (xScale.rangeBand() - rectPadding)/2;
@@ -75,7 +76,8 @@ function drawChart(dataset) {
             return 20;
         })
         .text(function(d){
-            return d;
+            if (d > 0)
+              return d;
         });
 
     //添加x轴
