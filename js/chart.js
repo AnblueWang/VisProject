@@ -1,7 +1,7 @@
-function drawChart(dataset) {    
+function drawChart(dataset, w, h) {    
     //画布大小
-    var width = 800;
-    var height = 400;
+    var width = 0.6*w;
+    var height = 0.6*h;
 
     //在 body 里添加一个 SVG 画布   
     var chart = d3.select("#charts")

@@ -70,12 +70,12 @@ div.tooltip {
   <p>Responsive D3 World Map with zoom and pan limits, graticule and equator lines, optimized TopoJSON with country names and colors, geo translation functions, geo coordinate plotting functions for points and text, and much more.  For a full list of features, please go <a href="http://techslides.com/d3-map-starter-kit/">back to article</a>.</p> -->
 
   <div id="container">
-    <div id="charts" style="position:fixed;float:left;top:100px;left:200px;opacity: 0.75;background:#FCFAF2"></div>
-     <form id = "header" style="position:absolute;float:left;top:560px;left:400px;font-size: 22px">
+    <div id="charts" style="position:fixed;float:left;top:20%;left:25%;opacity: 0.75;background:#FCFAF2"></div>
+     <form style="position:absolute;float:left;top:96%;left:40%;font-size: 22px">
       <a style="opacity: 0.8;color:#b11715;" id="result">Year: 2001</a> 
       <input id="bar" type="range" name="points" min="1997" max="2016" onmouseup="update()"/>
     </form> 
-    <div style="position:fixed;float:left;top:520px;left:300px;opacity:0.8;font-size:28px;opacity:0.8; font:Trebuchet MS;"><a target="_blank" style="color:#b11715;"> The global terrorism attacks from 1997-2016</a></div>
+    <div id = "header" style="position:absolute;float:left;top:90%;left:25%;opacity:0.8;font-size:28px;opacity:0.8; font:Trebuchet MS;"><a target="_blank" style="color:#b11715;"> The global terrorism attacks from 1997-2016</a></div>
   </div>
 
 
@@ -122,8 +122,6 @@ var tooltip = d3.select("#container").append("div").attr("class", "tooltip hidde
 setup(width,height);
 // set up the container width and height
 function setup(width,height){
-  Head.style.left = width/3;
-  Head.style.top = height - 100;
 
   projection = d3.geo.mercator()
     .translate([(width/2), (height/2)])
@@ -234,7 +232,7 @@ function draw(topo,year,count,attacks) {
       var dataset = [10, 20, 30, 40, 33, 24, 12, 5, 38, 39, 29, 49,29, 53, 4, 2, 4 ,0,0, 0];
       for (var i = 1997; i < 2017; i++)
         dataset[i-1997] = count[i][d.properties.name];
-      chart = drawChart(dataset);
+      chart = drawChart(dataset, width, height);
       chart.classed("hidden", false);
       event.stopPropagation();
       console.log("clicked");
